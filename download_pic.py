@@ -15,17 +15,6 @@ import file_util
 class DownloadPic(object):
     def __init__(self, target):
         self.searchKey = target
-        self._header = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-                        'Accept-Encoding': 'gzip, deflate',
-                        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                        'Cache-Control': 'max-age=0',
-                        'Connection': 'keep-alive',
-                        'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
-                        'If-None-Match': '4307a5a8da1dab822019c1971717db2c',
-                        'Upgrade-Insecure-Requests': '1',
-                        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Mobile Safari/537.36'}
-        reload(sys)
-        sys.setdefaultencoding("utf-8")
 
     def getInfo(self):
         """
@@ -35,14 +24,14 @@ class DownloadPic(object):
         with open('data/info/%s.txt' % self.searchKey, 'r') as f:
             for line in f:
                 data = json.loads(line)
-                res.append(data['data'])
+                res.extend(data['data'])
         return res
 
     def get_images_info(self, info):
         """
         解析json数据
         """
-        data=[]
+        data = []
         for item in info:
             if len(item) > 0:
                 url = item['objURL']
@@ -54,11 +43,14 @@ class DownloadPic(object):
                 data.append((
                     url, directory, file_path
                 ))
-                if item.has_key('replaceUrl'):
+                if 'replaceUrl' in item:
                     replace_url = item['replaceUrl']
                     for replace_item in replace_url:
-                        if 'http' in replace_item['objURL']:
+                        if 'ObjURL' in replace_item:
+                            item_url = replace_item['ObjURL']
+                        elif 'objURL' in replace_item:
                             item_url = replace_item['objURL']
+                        if 'http' in item_url:
                             item_name = item_url[(item_url.rfind('/')+1):]
                             item_file_path = os.path.join(directory, item_name)
                             data.append((
@@ -74,20 +66,34 @@ class DownloadPic(object):
         if not file_util.isExists(file_path):
             file_util.setupDownloadDir(directory)
             try:
-                response = requests.get(url, self._header)
-                with open(file_path, 'wb') as f:
-                    f.write(response.content)
+                header = {'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+                          'Accept-Encoding': 'gzip, deflate',
+                          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                          'Cache-Control': 'max-age=0',
+                          'Connection': 'keep-alive',
+                          'Cache-Control': 'max-age=0',
+                          'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+                          'If-None-Match': '6271bfcc25fcf9857cf36b80e569f0bb',
+                          'Upgrade-Insecure-Requests': '1',
+                          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'}
+                response = requests.get(url, header)
+                if response.status_code == 200:
+                    with open(file_path, 'wb') as f:
+                        f.write(response.content)
+                else:
+                    print('download %s error,%s' % (url, response.status_code))
             except Exception as e:
-                print (e)
+                print('error url is %s' % url)
+                print(e)
 
-    def download_pics(self, images, process=10):
+    def download_pics(self, images, process=5):
         """
         多进程下载图片
         """
         startTime = time.time()
         pool = Pool(process)
         for img in images:
-            pool.apply_async(self.download_one_pic(self, img))
+            pool.apply_async(self.download_one_pic(img))
         pool.close()
         pool.join()
         endTime = time.time()
@@ -96,4 +102,4 @@ class DownloadPic(object):
     def start_download(self):
         info = self.getInfo()
         imgs = self.get_images_info(info)
-        self.download_pics(imgs, process=10)
+        self.download_pics(imgs, process=5)

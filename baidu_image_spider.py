@@ -14,10 +14,11 @@ class load_info(object):
                          'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
                          'Cache-Control': 'max-age=0',
                          'Connection': 'keep-alive',
+                         'Cache-Control':'max-age=0',
                          'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
-                         'If-None-Match': '4307a5a8da1dab822019c1971717db2c',
+                         'If-None-Match': '6271bfcc25fcf9857cf36b80e569f0bb',
                          'Upgrade-Insecure-Requests': '1',
-                         'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.119 Mobile Safari/537.36'}
+                         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36'}
 
     def save_page_data(self, page_data):
         """
@@ -37,12 +38,12 @@ class load_info(object):
         next = True
         while True == next:
             url = 'http://image.baidu.com/search/acjson?tn=resultjson_com&ipn=rj&ct=201326592&is=&fp=result&queryWord=%s&cl=2&lm=-1&ie=utf-8&oe=utf-8&adpicid=&st=&z=&ic=&hd=&latest=&copyright=&word=%s&s=&se=&tab=&width=&height=&face=&istype=&qc=&nc=1&fr=&expermode=&force=&pn=%d&rn=30&gsm=1c2&1551775746980=' % (
-                self.__searchKey, self.__searchKey, page*30)
+                self.__searchKey, self.__searchKey, 551760)
             print(url)
             page_data = requests.get(url, self.__header).json()
-            self.save_page_data(page_data)
-            next = len(page_data['data']) > 0
+            next = len(page_data['data']) > 1
             if next:
+                self.save_page_data(page_data)
                 page += 1
 
     def do_spider(self):
